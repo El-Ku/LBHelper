@@ -18,15 +18,16 @@ contract PoolTest is Test {
         uint256 deadline;
         uint256 totalAmount;
     }
-    Parameters s_parameters =
-        Parameters({
-            collateralToBorrowRatio: 1.5 ether,
-            minBorrowAmount: 10 ether,
-            interestRate: 0.01 ether,
-            partialRepaymentAllowed: false,
-            deadline: block.timestamp + 365 days,
-            totalAmount: 20 ether
-        });
+
+    Parameters s_parameters = Parameters({
+        collateralToBorrowRatio: 1.5 ether,
+        minBorrowAmount: 10 ether,
+        interestRate: 0.01 ether,
+        partialRepaymentAllowed: false,
+        deadline: block.timestamp + 365 days,
+        totalAmount: 20 ether
+    });
+
     struct Parameters2 {
         uint256 collateralToBorrowRatio;
         uint256 minBorrowAmount;
@@ -36,16 +37,16 @@ contract PoolTest is Test {
         uint256 totalAmount;
         uint256 index;
     }
-    Parameters2 s_parameters2 =
-        Parameters2({
-            collateralToBorrowRatio: 1.5 ether,
-            minBorrowAmount: 10 ether,
-            interestRate: 0.01 ether,
-            partialRepaymentAllowed: false,
-            deadline: block.timestamp + 365 days,
-            totalAmount: 20 ether,
-            index: 1
-        });
+
+    Parameters2 s_parameters2 = Parameters2({
+        collateralToBorrowRatio: 1.5 ether,
+        minBorrowAmount: 10 ether,
+        interestRate: 0.01 ether,
+        partialRepaymentAllowed: false,
+        deadline: block.timestamp + 365 days,
+        totalAmount: 20 ether,
+        index: 1
+    });
     DeployPool s_deployPool;
     Pool s_pool;
     ERC20Mock s_lenderToken;
@@ -94,12 +95,7 @@ contract PoolTest is Test {
 
     function testLendNewLoanLenderTokenIsNotWhitelisted() external {
         // use a lender token which is not in the whitelist
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.LenderTokenIsNotWhitelisted.selector,
-                address(s_lenderToken)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.LenderTokenIsNotWhitelisted.selector, address(s_lenderToken)));
         vm.prank(USER1);
         s_pool.lendNew(
             address(s_lenderToken),
@@ -117,10 +113,7 @@ contract PoolTest is Test {
         // use a collateral token which is not in the whitelist
         _addTokenToWhitelist(address(s_lenderToken));
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.CollateralTokenIsNotWhitelisted.selector,
-                address(s_collateralToken)
-            )
+            abi.encodeWithSelector(Errors.CollateralTokenIsNotWhitelisted.selector, address(s_collateralToken))
         );
         vm.prank(USER1);
         s_pool.lendNew(
@@ -139,11 +132,7 @@ contract PoolTest is Test {
         _addTokenToWhitelist(address(s_lenderToken));
         _addTokenToWhitelist(address(s_collateralToken));
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.DeadlineShouldBeInTheFuture.selector,
-                block.timestamp,
-                block.timestamp
-            )
+            abi.encodeWithSelector(Errors.DeadlineShouldBeInTheFuture.selector, block.timestamp, block.timestamp)
         );
         vm.prank(USER1);
         s_pool.lendNew(
@@ -161,12 +150,7 @@ contract PoolTest is Test {
     function testTotalAmountShouldBeGreaterThanZero() external {
         _addTokenToWhitelist(address(s_lenderToken));
         _addTokenToWhitelist(address(s_collateralToken));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.TotalAmountShouldBePositive.selector,
-                0
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.TotalAmountShouldBePositive.selector, 0));
         vm.prank(USER1);
         s_pool.lendNew(
             address(s_lenderToken),
@@ -184,12 +168,7 @@ contract PoolTest is Test {
         _addTokenToWhitelist(address(s_lenderToken));
         _addTokenToWhitelist(address(s_collateralToken));
         s_parameters.totalAmount = s_parameters.minBorrowAmount - 1;
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.TotalAmountShouldBePositive.selector,
-                s_parameters.totalAmount
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.TotalAmountShouldBePositive.selector, s_parameters.totalAmount));
         vm.prank(USER1);
         s_pool.lendNew(
             address(s_lenderToken),
@@ -226,16 +205,10 @@ contract PoolTest is Test {
         s_pool.cancelLending(maxPoolIndex, false);
         uint256 user1AfterBalance = s_lenderToken.balanceOf(USER1);
         uint256 poolAfterBalance = s_lenderToken.balanceOf(address(s_pool));
-        assert(
-            user1AfterBalance == user1BeforeBalance + s_parameters.totalAmount
-        );
-        assert(
-            poolAfterBalance == poolBeforeBalance - s_parameters.totalAmount
-        );
+        assert(user1AfterBalance == user1BeforeBalance + s_parameters.totalAmount);
+        assert(poolAfterBalance == poolBeforeBalance - s_parameters.totalAmount);
         // verify that the mapping is updated successfully
-        Structs.LendedPool memory lendedPool = s_pool.getLenderPools(
-            maxPoolIndex
-        );
+        Structs.LendedPool memory lendedPool = s_pool.getLenderPools(maxPoolIndex);
         assert(lendedPool.lender == USER1);
         assert(lendedPool.initialAmountToLend == 0);
         assert(lendedPool.totalRemainingAmountToLend == 0);
@@ -252,16 +225,10 @@ contract PoolTest is Test {
         s_pool.cancelLending(maxPoolIndex, true);
         uint256 user1AfterBalance = s_lenderToken.balanceOf(USER1);
         uint256 poolAfterBalance = s_lenderToken.balanceOf(address(s_pool));
-        assert(
-            user1AfterBalance == user1BeforeBalance + s_parameters.totalAmount
-        );
-        assert(
-            poolAfterBalance == poolBeforeBalance - s_parameters.totalAmount
-        );
+        assert(user1AfterBalance == user1BeforeBalance + s_parameters.totalAmount);
+        assert(poolAfterBalance == poolBeforeBalance - s_parameters.totalAmount);
         // verify that the mapping is updated successfully
-        Structs.LendedPool memory lendedPool = s_pool.getLenderPools(
-            maxPoolIndex
-        );
+        Structs.LendedPool memory lendedPool = s_pool.getLenderPools(maxPoolIndex);
         assert(lendedPool.lender == address(0));
         assert(s_pool.getLenderPoolsLength() == maxPoolIndex - 1);
     }
@@ -289,9 +256,7 @@ contract PoolTest is Test {
         assert(maxPoolIndex == 1);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.CBRatioShouldBeSameOrSmall.selector,
-                1.51 ether,
-                s_parameters.collateralToBorrowRatio
+                Errors.CBRatioShouldBeSameOrSmall.selector, 1.51 ether, s_parameters.collateralToBorrowRatio
             )
         );
         s_parameters.totalAmount = 0 ether;
@@ -315,10 +280,7 @@ contract PoolTest is Test {
             s_parameters.totalAmount,
             maxPoolIndex
         );
-        assert(
-            s_pool.getLenderPools(maxPoolIndex).collateralToBorrowRatio ==
-                1.49 ether
-        );
+        assert(s_pool.getLenderPools(maxPoolIndex).collateralToBorrowRatio == 1.49 ether);
     }
 
     function testLendUpdateMinBorrowAmt() external {
@@ -327,11 +289,7 @@ contract PoolTest is Test {
         assert(maxPoolIndex == 1);
         s_parameters.totalAmount = 0 ether;
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.MinBAmtShouldBeSameOrSmall.selector,
-                11 ether,
-                s_parameters.minBorrowAmount
-            )
+            abi.encodeWithSelector(Errors.MinBAmtShouldBeSameOrSmall.selector, 11 ether, s_parameters.minBorrowAmount)
         );
         vm.prank(USER1);
         s_pool.lendUpdate(
@@ -364,9 +322,7 @@ contract PoolTest is Test {
         s_parameters.totalAmount = 0 ether;
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.InterestRateShouldBeSameOrSmaller.selector,
-                0.02 ether,
-                s_parameters.interestRate
+                Errors.InterestRateShouldBeSameOrSmaller.selector, 0.02 ether, s_parameters.interestRate
             )
         );
         vm.prank(USER1);
@@ -419,9 +375,7 @@ contract PoolTest is Test {
         s_parameters.totalAmount = 0 ether;
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.PartialRepaymentShouldBeSameOrTrue.selector,
-                false,
-                s_parameters.partialRepaymentAllowed
+                Errors.PartialRepaymentShouldBeSameOrTrue.selector, false, s_parameters.partialRepaymentAllowed
             )
         );
         vm.prank(USER1);
@@ -444,9 +398,7 @@ contract PoolTest is Test {
         s_parameters.totalAmount = 0 ether;
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.DeadlineShouldBeSameOrGreater.selector,
-                s_parameters.deadline - 1 seconds,
-                s_parameters.deadline
+                Errors.DeadlineShouldBeSameOrGreater.selector, s_parameters.deadline - 1 seconds, s_parameters.deadline
             )
         );
         vm.prank(USER1);
@@ -469,10 +421,7 @@ contract PoolTest is Test {
             s_parameters.totalAmount,
             maxPoolIndex
         );
-        assert(
-            s_pool.getLenderPools(maxPoolIndex).deadline ==
-                s_parameters.deadline + 1 seconds
-        );
+        assert(s_pool.getLenderPools(maxPoolIndex).deadline == s_parameters.deadline + 1 seconds);
     }
 
     function testAddMoreTokensToLenderPool() external {
@@ -496,24 +445,18 @@ contract PoolTest is Test {
         vm.stopPrank();
         uint256 user1AfterBalance = s_lenderToken.balanceOf(USER1);
         uint256 poolAfterBalance = s_lenderToken.balanceOf(address(s_pool));
-        assert(
-            user1AfterBalance == user1BeforeBalance - s_parameters.totalAmount
-        );
-        assert(
-            poolAfterBalance == poolBeforeBalance + s_parameters.totalAmount
-        );
-        assert(
-            s_pool.getLenderPools(maxPoolIndex).initialAmountToLend ==
-                poolAfterBalance
-        );
-        assert(
-            s_pool.getLenderPools(maxPoolIndex).totalRemainingAmountToLend ==
-                poolAfterBalance
-        );
+        assert(user1AfterBalance == user1BeforeBalance - s_parameters.totalAmount);
+        assert(poolAfterBalance == poolBeforeBalance + s_parameters.totalAmount);
+        assert(s_pool.getLenderPools(maxPoolIndex).initialAmountToLend == poolAfterBalance);
+        assert(s_pool.getLenderPools(maxPoolIndex).totalRemainingAmountToLend == poolAfterBalance);
     }
 
-    /********* Internal Functions   ****************/
-    /******************************************** */
+    /**
+     * Internal Functions   ***************
+     */
+    /**
+     *
+     */
     function _addTokenToWhitelist(address token) internal {
         vm.prank(msg.sender);
         s_pool.addTokenToWhitelist(token);
@@ -544,9 +487,7 @@ contract PoolTest is Test {
         assert(poolAfterBalance == poolBeforeBalance + p.totalAmount);
         // verify that the mapping is created successfully
         uint256 maxPoolIndex = s_pool.getLenderPoolsLength();
-        Structs.LendedPool memory lendedPool = s_pool.getLenderPools(
-            maxPoolIndex
-        );
+        Structs.LendedPool memory lendedPool = s_pool.getLenderPools(maxPoolIndex);
         assert(lendedPool.lender == USER1);
         assert(lendedPool.lenderToken == address(s_lenderToken));
         assert(lendedPool.collateralToken == address(s_collateralToken));

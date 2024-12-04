@@ -6,10 +6,7 @@ import {Pool} from "../src/Pool.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
 contract DeployPool is Script {
-    function run()
-        external
-        returns (Pool pool, ERC20Mock lenderToken, ERC20Mock collateralToken)
-    {
+    function run() external returns (Pool pool, ERC20Mock lenderToken, ERC20Mock collateralToken) {
         pool = deployPool();
         lenderToken = deployToken();
         collateralToken = deployToken();

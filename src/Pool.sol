@@ -48,22 +48,10 @@ contract Pool is Structs {
         uint256 deadline,
         uint256 totalAmount
     ) external {
-        require(
-            s_whitelistedTokens[lenderToken],
-            Errors.LenderTokenIsNotWhitelisted(lenderToken)
-        );
-        require(
-            s_whitelistedTokens[collateralToken],
-            Errors.CollateralTokenIsNotWhitelisted(collateralToken)
-        );
-        require(
-            deadline > block.timestamp,
-            Errors.DeadlineShouldBeInTheFuture(deadline, block.timestamp)
-        );
-        require(
-            totalAmount > 0 && totalAmount >= minBorrowAmount,
-            Errors.TotalAmountShouldBePositive(totalAmount)
-        );
+        require(s_whitelistedTokens[lenderToken], Errors.LenderTokenIsNotWhitelisted(lenderToken));
+        require(s_whitelistedTokens[collateralToken], Errors.CollateralTokenIsNotWhitelisted(collateralToken));
+        require(deadline > block.timestamp, Errors.DeadlineShouldBeInTheFuture(deadline, block.timestamp));
+        require(totalAmount > 0 && totalAmount >= minBorrowAmount, Errors.TotalAmountShouldBePositive(totalAmount));
         LendedPool memory lendedPool = LendedPool({
             lender: msg.sender,
             borrowerInfo: new uint256[](0),
@@ -91,44 +79,25 @@ contract Pool is Structs {
         uint256 amountToAdd,
         uint256 lenderPoolId
     ) external {
-        require(
-            s_lenderPools[lenderPoolId].lender == msg.sender,
-            Errors.OnlyOriginalLenderCanUpdateLendedPool()
-        );
+        require(s_lenderPools[lenderPoolId].lender == msg.sender, Errors.OnlyOriginalLenderCanUpdateLendedPool());
         LendedPool memory lendedPool = s_lenderPools[lenderPoolId];
         require(
             lendedPool.collateralToBorrowRatio >= collateralToBorrowRatio,
-            Errors.CBRatioShouldBeSameOrSmall(
-                collateralToBorrowRatio,
-                lendedPool.collateralToBorrowRatio
-            )
+            Errors.CBRatioShouldBeSameOrSmall(collateralToBorrowRatio, lendedPool.collateralToBorrowRatio)
         );
         require(
             lendedPool.minBorrowAmount >= minBorrowAmount,
-            Errors.MinBAmtShouldBeSameOrSmall(
-                minBorrowAmount,
-                lendedPool.minBorrowAmount
-            )
+            Errors.MinBAmtShouldBeSameOrSmall(minBorrowAmount, lendedPool.minBorrowAmount)
         );
         require(
             lendedPool.interestRate >= interestRate,
-            Errors.InterestRateShouldBeSameOrSmaller(
-                interestRate,
-                lendedPool.interestRate
-            )
+            Errors.InterestRateShouldBeSameOrSmaller(interestRate, lendedPool.interestRate)
         );
         require(
-            lendedPool.partialRepaymentAllowed == partialRepaymentAllowed ||
-                partialRepaymentAllowed == true,
-            Errors.PartialRepaymentShouldBeSameOrTrue(
-                partialRepaymentAllowed,
-                lendedPool.partialRepaymentAllowed
-            )
+            lendedPool.partialRepaymentAllowed == partialRepaymentAllowed || partialRepaymentAllowed == true,
+            Errors.PartialRepaymentShouldBeSameOrTrue(partialRepaymentAllowed, lendedPool.partialRepaymentAllowed)
         );
-        require(
-            lendedPool.deadline <= deadline,
-            Errors.DeadlineShouldBeSameOrGreater(deadline, lendedPool.deadline)
-        );
+        require(lendedPool.deadline <= deadline, Errors.DeadlineShouldBeSameOrGreater(deadline, lendedPool.deadline));
         LendedPool storage sLendedPool = s_lenderPools[lenderPoolId];
         if (lendedPool.collateralToBorrowRatio != collateralToBorrowRatio) {
             sLendedPool.collateralToBorrowRatio = collateralToBorrowRatio;
@@ -146,29 +115,18 @@ contract Pool is Structs {
             sLendedPool.deadline = deadline;
         }
         if (amountToAdd > 0) {
-            sLendedPool.initialAmountToLend =
-                sLendedPool.initialAmountToLend +
-                amountToAdd;
-            sLendedPool.totalRemainingAmountToLend =
-                sLendedPool.totalRemainingAmountToLend +
-                amountToAdd;
+            sLendedPool.initialAmountToLend = sLendedPool.initialAmountToLend + amountToAdd;
+            sLendedPool.totalRemainingAmountToLend = sLendedPool.totalRemainingAmountToLend + amountToAdd;
         }
         address lenderToken = s_lenderPools[lenderPoolId].lenderToken;
         _transferLenderToken(lenderToken, amountToAdd);
     }
 
     function cancelLending(uint256 lenderPoolId, bool deleteMapping) external {
-        require(
-            s_lenderPools[lenderPoolId].lender == msg.sender,
-            Errors.OnlyOriginalLenderCanCancelLending()
-        );
-        require(
-            s_lenderPools[lenderPoolId].borrowerInfo.length == 0,
-            Errors.LenderStillHasBorrowers()
-        );
+        require(s_lenderPools[lenderPoolId].lender == msg.sender, Errors.OnlyOriginalLenderCanCancelLending());
+        require(s_lenderPools[lenderPoolId].borrowerInfo.length == 0, Errors.LenderStillHasBorrowers());
         ERC20(s_lenderPools[lenderPoolId].lenderToken).safeTransfer(
-            msg.sender,
-            s_lenderPools[lenderPoolId].totalRemainingAmountToLend
+            msg.sender, s_lenderPools[lenderPoolId].totalRemainingAmountToLend
         );
         if (deleteMapping) {
             delete s_lenderPools[lenderPoolId];
@@ -182,16 +140,9 @@ contract Pool is Structs {
     // Function called by borrower specifying which lender he want to choose and how much he want to borrow
 
     // Internal functions
-    function _transferLenderToken(
-        address lenderToken,
-        uint256 totalAmount
-    ) internal {
+    function _transferLenderToken(address lenderToken, uint256 totalAmount) internal {
         if (totalAmount > 0) {
-            ERC20(lenderToken).safeTransferFrom(
-                msg.sender,
-                address(this),
-                totalAmount
-            );
+            ERC20(lenderToken).safeTransferFrom(msg.sender, address(this), totalAmount);
         }
     }
 
@@ -206,10 +157,7 @@ contract Pool is Structs {
     }
 
     function acceptOwnership() external onlyTempOwner {
-        require(
-            block.timestamp > s_tempOwnerSetTimestamp + COOL_DOWN_PERIOD,
-            Errors.CoolDownPeriodNotYetOver()
-        );
+        require(block.timestamp > s_tempOwnerSetTimestamp + COOL_DOWN_PERIOD, Errors.CoolDownPeriodNotYetOver());
         s_owner = s_tempOwner;
         s_tempOwner = address(0);
     }
@@ -222,9 +170,7 @@ contract Pool is Structs {
         return s_whitelistedTokens[token];
     }
 
-    function getLenderPools(
-        uint256 index
-    ) public view returns (LendedPool memory) {
+    function getLenderPools(uint256 index) public view returns (LendedPool memory) {
         return s_lenderPools[index];
     }
 
@@ -232,9 +178,7 @@ contract Pool is Structs {
         return s_currentMaxLenderPoolId;
     }
 
-    function getBorrowerInfo(
-        uint256 index
-    ) public view returns (BorrowerInfo memory) {
+    function getBorrowerInfo(uint256 index) public view returns (BorrowerInfo memory) {
         return s_borrowerInfos[index];
     }
 }
